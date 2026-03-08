@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 # Create your models here.
 
@@ -138,3 +139,70 @@ class Movie(models.Model):
     def __str__(self):
         return self.title
 
+
+class Link(models.Model):
+    # Mirrors the CSV column order exactly:
+    movieId = models.IntegerField(db_index=True, unique=True)     # MovieLens internal ID
+    imdbId = models.IntegerField(null=True, blank=True, db_index=True)   # numeric in links.csv
+    tmdbId = models.IntegerField(null=True, blank=True, db_index=True)   # numeric in links.csv
+
+    # Convenience FK to our Movie row (resolved by tmdbId or imdbId)
+    movie = models.ForeignKey(
+        'Movie', null=True, blank=True, on_delete=models.SET_NULL, related_name='links'
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['movieId']),
+            models.Index(fields=['imdbId']),
+            models.Index(fields=['tmdbId']),
+        ]
+        verbose_name = "link (MovieLens - IMDb - TMDb)"
+        verbose_name_plural = "links"
+
+    def __str__(self):
+        return f"Interal Id: {self.movieId}  Imdb Id: {self.self.imdbId}   TmbdId: {self.tmdbId}"
+
+
+class Rating(models.Model):
+    # Old: 
+    userId = models.IntegerField(db_index=True)
+    # New: a real FK to the auth user
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # uses 'auth.User' unless you later swap
+        on_delete=models.SET_NULL,
+        related_name="ratings",
+        db_index=True,
+        null=True,   # temporarily nullable for data migration; we’ll set null=False after backfill
+        blank=True,
+    )
+
+    movieId = models.IntegerField(db_index=True)   # MovieLens movieId (keep for joins)
+    rating = models.FloatField()
+    timestamp = models.DateTimeField()
+    movie = models.ForeignKey('Movie', null=True, blank=True,
+                              on_delete=models.SET_NULL, related_name='ratings')
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "movieId"]),
+            models.Index(fields=["-timestamp"]),
+        ]
+        constraints = [
+            # We key uniqueness by (user, movieId, timestamp).
+            models.UniqueConstraint(fields=["user", "movieId", "timestamp"],
+                                    name="uniq_user_ml_movie_ts")
+        ]
+
+    def __str__(self):
+        return f"User Id: {self.userId}  Movie Id: {self.movieId}"
+    
+
+
+
+
+
+
+
+
+    

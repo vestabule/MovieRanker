@@ -12,7 +12,32 @@ from .models import Movie, Genre, Company, Country, Language
 
 # movies/admin.py
 from django.contrib import admin
-from .models import Movie, Genre, Company, Country, Language
+from .models import Movie, Genre, Company, Country, Language, Link, Rating
+
+
+# movies/admin.py
+@admin.register(Rating)
+class RatingAdmin(admin.ModelAdmin):
+    list_display = ("userId", "movieId", "rating", "timestamp") #, "movie_title")
+    search_fields = ("user__username", "movieId")
+    list_filter = ("rating",)
+    autocomplete_fields = ("movie",)
+
+
+
+@admin.register(Link)
+class LinkAdmin(admin.ModelAdmin):
+    list_display = ("movieId", "imdbId", "tmdbId", "movie_linked")
+    search_fields = ("movieId", "imdbId", "tmdbId")
+    list_filter = ()
+    autocomplete_fields = ("movie",)
+
+    def movie_linked(self, obj):
+        if obj.movie_id:
+            return f"{obj.movie.title} (tmdb:{obj.movie.tmdb_id}, imdb:{obj.movie.imdb_id})"
+        return "—"
+    movie_linked.short_description = "Resolved Movie"
+
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):

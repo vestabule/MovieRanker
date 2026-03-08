@@ -9,7 +9,9 @@ Download "The Movies Datasset" from Kaggle: https://www.kaggle.com/datasets/roun
 Extract and then run the following:
 
     python manage.py migrate
-    python manage.py import_movies_metadata --path /path/to/movie_metadata.csv
+    python manage.py import_movies_metadata --path /path/to/movie_metadata.csv --batch-size 1000
+    python manage.py import_links --path /path/to/links.csv --batch-size 10000 --backfill-imdb
+    python manage.py import_ratings --path /path/to/ratings_small.csv --batch-size 5000 --resolve-movie
 
 ## Running the Application in a Dev Environmnet
 
