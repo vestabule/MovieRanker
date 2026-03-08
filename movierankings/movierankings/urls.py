@@ -16,8 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from accounts.views import home
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("movieranker/", include("movieranker.urls"))
+    
+    # Built-in auth views: /accounts/login/, /logout/, /password_change/, etc.
+    path("accounts/", include("django.contrib.auth.urls")),
+
+    # Our custom signup + dashboard
+    path("accounts/", include("accounts.urls")),
+
+    path("", home, name="home")
+
+    #path("movieranker/", include("movieranker.urls"))
 ]

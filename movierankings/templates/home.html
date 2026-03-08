@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Welcome to MovieRank</h1>
+{% if user.is_authenticated %}
+<p>Hi {{ user.username }}! Explore movies, rank them, and get recommendations.</p>
+{% else %}
+<p>You’re not logged in. <a href="{% url 'login' %}">Log in</a> or <a href="{% url 'signup' %}">Sign up</a></p>
+{% endif %}
+<nav>
+    <!-- <a href="{% url 'home' %}">Home</a> |
+    <a href="{% url 'login' %}">Login</a> | -->
+</nav>
+{% endblock %}
