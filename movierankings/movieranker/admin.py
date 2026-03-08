@@ -1,6 +1,6 @@
-from django.contrib import admin
+#from django.contrib import admin
 
-from .models import Movie, Genre, Company, Country, Language
+#from .models import Movie, Genre, Company, Country, Language
 
 # Register your models here.
 
@@ -12,7 +12,34 @@ from .models import Movie, Genre, Company, Country, Language
 
 # movies/admin.py
 from django.contrib import admin
-from .models import Movie, Genre, Company, Country, Language, Link, Rating
+from .models import Movie, Person, MovieCredit, Genre, Company, Country, Language, Link, Rating, MovieCredit
+
+class MovieCreditInline(admin.TabularInline):
+    model = MovieCredit
+    extra = 0
+    autocomplete_fields = ("person",)
+    fields = ("person", "role", "job", "department", "character", "cast_order")
+    ordering = ("role", "cast_order", "job")
+
+@admin.register(Movie)
+class MovieAdmin(admin.ModelAdmin):
+    list_display = ("title", "tmdb_id", "release_date", "vote_average")
+    search_fields = ("title", "original_title", "imdb_id", "tmdb_id")
+    filter_horizontal = ("genres", "production_companies", "production_countries", "spoken_languages")
+    inlines = [MovieCreditInline]
+
+class PersonCreditInline(admin.TabularInline):
+    model = MovieCredit
+    extra = 0
+    autocomplete_fields = ("movie",)
+    fields = ("movie", "role", "job", "department", "character", "cast_order")
+    ordering = ("movie__title", "role", "cast_order", "job")
+
+@admin.register(Person)
+class PersonAdmin(admin.ModelAdmin):
+    list_display = ("name", "tmdb_id")
+    search_fields = ("name", "tmdb_id")
+    inlines = [PersonCreditInline]
 
 
 # movies/admin.py
@@ -39,19 +66,19 @@ class LinkAdmin(admin.ModelAdmin):
     movie_linked.short_description = "Resolved Movie"
 
 
-@admin.register(Movie)
-class MovieAdmin(admin.ModelAdmin):
-    list_display = ("title", "tmdb_id", "release_date", "vote_average")
-    search_fields = ("title", "original_title", "imdb_id", "tmdb_id")
-    list_filter = (
-        "release_date",
-        ("original_language", admin.RelatedOnlyFieldListFilter),
-        ("genres", admin.RelatedOnlyFieldListFilter),
-        ("production_companies", admin.RelatedOnlyFieldListFilter),
-        ("production_countries", admin.RelatedOnlyFieldListFilter),
-    )
-    # Makes the dual-selector UI very explicit for M2M:
-    filter_horizontal = ("genres", "production_companies", "production_countries", "spoken_languages")
+# @admin.register(Movie)
+# class MovieAdmin(admin.ModelAdmin):
+#     list_display = ("title", "tmdb_id", "release_date", "vote_average")
+#     search_fields = ("title", "original_title", "imdb_id", "tmdb_id")
+#     list_filter = (
+#         "release_date",
+#         ("original_language", admin.RelatedOnlyFieldListFilter),
+#         ("genres", admin.RelatedOnlyFieldListFilter),
+#         ("production_companies", admin.RelatedOnlyFieldListFilter),
+#         ("production_countries", admin.RelatedOnlyFieldListFilter),
+#     )
+#     # Makes the dual-selector UI very explicit for M2M:
+#     filter_horizontal = ("genres", "production_companies", "production_countries", "spoken_languages")
 
 # Helpful search in related pickers
 @admin.register(Genre)

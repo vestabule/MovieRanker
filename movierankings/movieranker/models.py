@@ -161,7 +161,7 @@ class Link(models.Model):
         verbose_name_plural = "links"
 
     def __str__(self):
-        return f"Interal Id: {self.movieId}  Imdb Id: {self.self.imdbId}   TmbdId: {self.tmdbId}"
+        return f"Interal Id: {self.movieId}  Imdb Id: {self.imdbId}   TmbdId: {self.tmdbId}"
 
 
 class Rating(models.Model):
@@ -198,6 +198,52 @@ class Rating(models.Model):
         return f"User Id: {self.userId}  Movie Id: {self.movieId}"
     
 
+class Person(models.Model):
+    tmdb_id = models.IntegerField(null=True, blank=True, unique=True)
+    name = models.CharField(max_length=200, db_index=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} (tmdb:{self.tmdb_id})" if self.tmdb_id else self.name
+
+
+class CreditRole(models.TextChoices):
+    ACTOR = "ACTOR", "Actor"
+    CREW = "CREW", "Crew"
+
+
+class MovieCredit(models.Model):
+    movie = models.ForeignKey("Movie", on_delete=models.CASCADE, related_name="credits")
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="credits")
+    role = models.CharField(max_length=10, choices=CreditRole.choices)
+
+    # Crew/cast metadata
+    job = models.CharField(max_length=100, blank=True)        # crew only (e.g., Director)
+    department = models.CharField(max_length=100, blank=True) # crew only (e.g., Directing)
+    character = models.CharField(max_length=200, blank=True)  # cast only
+    cast_order = models.IntegerField(null=True, blank=True)   # cast only
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["role", "job"]),
+            models.Index(fields=["cast_order"]),
+        ]
+        constraints = [
+            # Avoid duplicate rows for the same movie/person/role combo
+            models.UniqueConstraint(
+                fields=["movie", "person", "role", "job", "character"],
+                name="uniq_movie_person_role_job_character",
+            )
+        ]
+
+    def __str__(self):
+        if self.role == CreditRole.ACTOR and self.character:
+            return f"{self.person.name} as {self.character}"
+        if self.role == CreditRole.CREW and self.job:
+            return f"{self.person.name} — {self.job}"
+        return f"{self.person.name} ({self.role})"
 
 
 
@@ -205,4 +251,3 @@ class Rating(models.Model):
 
 
 
-    
