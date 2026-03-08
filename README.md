@@ -14,6 +14,10 @@ Extract and then run the following:
     python manage.py import_ratings --path /path/to/ratings_small.csv --batch-size 5000 --resolve-movie
     python manage.py import_credits --path "/path/to/credits.csv" --batch-size 2000
     python manage.py import_credits --path "/path/to/credits.csv" --batch-size 5000 --sqlite-fast
+    # quick test# quick test/path/to/keywords.csv" --limit 20000 --batch-size 10000 --sqlite-fast
+    python manage.py import_keywords --path "/path/to/keywords.csv" --batch-size 10000 --sqlite-fast
+
+
 
 ## Running the Application in a Dev Environmnet
 

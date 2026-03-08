@@ -246,6 +246,28 @@ class MovieCredit(models.Model):
         return f"{self.person.name} ({self.role})"
 
 
+class Keyword(models.Model):
+    # TMDb keyword identifier; may be null for rare rows that only have a name.
+    tmdb_id = models.IntegerField(null=True, blank=True, unique=True)
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class MovieKeyword(models.Model):
+    movie = models.ForeignKey("Movie", on_delete=models.CASCADE, related_name="movie_keywords")
+    keyword = models.ForeignKey(Keyword, on_delete=models.CASCADE, related_name="movie_keywords")
+
+    class Meta:
+        unique_together = ("movie", "keyword")
+
+    def __str__(self):
+        return f"{self.movie.title} — {self.keyword.name}"
+
 
 
 
