@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from accounts.views import home
+from movieranker.views import home, home_redirect, movies, movie_details, rate_movie
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,7 +27,17 @@ urlpatterns = [
     # Our custom signup + dashboard
     path("accounts/", include("accounts.urls")),
 
-    path("", home, name="home")
+    # Home page
+    path("", home_redirect, name="home_redirect"),
+    path("home/", home, name="home"),
 
-    #path("movieranker/", include("movieranker.urls"))
+    # Urls for movies
+    #path("movieranker/", include("movieranker.urls")),
+
+    # Urls for movies - doing here to avoid having /movieranker/ in the url
+    path("movies/", movies, name="movies"),
+
+    path("movie/<int:pk>/", movie_details, name="movie"),
+
+    path("movie/<int:pk>/rate", rate_movie, name="rate"),
 ]

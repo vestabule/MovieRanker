@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Movies{% endblock %}
+{% block content %}
+
+
+<style>
+        body {
+            font-family: system-ui, Arial, sans-serif;
+            padding: 1.5rem;
+        }
+
+        .back {
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .meta {
+            color: #444;
+            margin: .5rem 0 1rem;
+        }
+
+        .chip {
+            display: inline-block;
+            background: #f3f3f3;
+            border: 1px solid #e3e3e3;
+            padding: .15rem .5rem;
+            border-radius: 999px;
+            margin-right: .35rem;
+            margin-bottom: .35rem;
+            font-size: .9rem;
+        }
+
+        .section {
+            margin: 1rem 0;
+        }
+</style>
+
+<div class="back">
+    {% if return_url %}
+    <a href="{{ return_url }}">&larr; Back to results</a>
+    {% else %}
+    <a href="{% url 'movies' %}">&larr; Back to list</a>
+    {% endif %}
+</div>
+
+<h1>{{ movie.title }}</h1>
+
+<div class="meta">
+    <strong>Release:</strong> {{ movie.release_date|default:"—" }} &nbsp;|&nbsp;
+    <strong>Rating:</strong> {{ movie.vote_average|default:"—" }} &nbsp;|&nbsp;
+    <strong>Popularity:</strong> {{ movie.popularity|default:"—" }}
+</div>
+
+{% if movie.genres.all %}
+<div class="section">
+    <strong>Genres:</strong>
+    <div>
+        {% for g in movie.genres.all %}
+        <span class="chip">{{ g.name }}</span>
+        {% empty %}
+        <span>—</span>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if movie.overview %}
+<div class="section">
+    <h3>Overview</h3>
+    <p>{{ movie.overview }}</p>
+</div>
+{% endif %}
+
+{# Add more fields from your model as needed: runtime, budget, revenue, homepage, etc. #}
+{# Example (uncomment if you have them): #}
+<div class="section">
+    <strong>Runtime:</strong> {{ movie.runtime|default:"—" }} minutes
+</div>
+<div class="section">
+    <strong>Homepage:</strong>
+    <a href="{{ movie.homepage }}" target="_blank" rel="noopener">{{ movie.homepage }}</a>
+</div>
+<div class="section">
+    {% if user.is_authenticated and latest_user_rating %}
+    <p>Your rating: {{ latest_user_rating.rating }} (on {{ latest_user_rating.timestamp|date:"Y-m-d H:i" }})</p>
+    {% endif %}
+</div>
+
+<p>
+    {% if user.is_authenticated %}
+        <a href="{% url 'rate' movie.id %}?return={{ request.get_full_path|urlencode }}">
+            Rate this movie
+        </a>
+    {% else %}
+        <a a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">
+            Login to rate this movie
+        </a>
+    {% endif %}
+</p>
+
+
+{% endblock %}
