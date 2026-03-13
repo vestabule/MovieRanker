@@ -2,30 +2,140 @@
     <a href="/home/" style="margin-right: 10px;">Login</a>
     <a href="/signup/" style="margin-right: 10px;">Sign Up</a>
     <a href="/movies/" style="margin-right: 10px;">Search Movies</a>
+    <a href="/movie/" style="margin-right: 10px;">Movie Details</a>
 
     <!-- Only show logout if logged in -->
     {% if request.user.is_authenticated %}
-    <a href="/ratings/" style="margin-right: 10px;">Your Ratings</a>
-    <button onclick="logoutUser()" style="margin-left: 15px;">Logout</button>
-    <span style="margin-left: 10px;">Logged in as: {{ request.user.username }}</span>
+    <span class="nav-user">Signed in as {{ request.user.username }}</span>
+    
+    <!-- Toggle Button -->
+    <button id="nav-dropdown-button" class="dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false"
+        aria-controls="nav-dropdown-panel">
+        Account ▼
+    </button>
+    
+    <!-- Dropdown Panel -->
+    <div id="nav-dropdown-panel" class="dropdown-panel" role="menu" aria-labelledby="nav-dropdown-button" hidden>
+        <div class="dropdown-section">
+            <a role="menuitem" href="/ratings/">My Ratings</a>
+        </div>
+    
+        <hr>
+    
+        <!-- Delete account area -->
+        <div class="dropdown-section">
+            <strong>Danger zone</strong>
+            <p class="muted">Delete your account and all ratings.</p>
+            <input id="del_password" type="password" placeholder="Password" />
+            <button class="danger" type="button" onclick="deleteAccount()">Delete my account</button>
+            <p id="del_status" class="status"></p>
+        </div>
+    
+        <hr>
+    
+        <button role="menuitem" type="button" class="logout" onclick="logoutUser()">Logout</button>
+    </div>
     {% endif %}
+
 </div>
 
 <script>
-async function logoutUser() {
-    try {
-        const response = await fetch("/logout/", {
-            method: "POST",
-            credentials: "include"
+
+    (function initNavbarDropdown() {
+        const btn = document.getElementById('nav-dropdown-button');
+        const panel = document.getElementById('nav-dropdown-panel');
+        if (!btn || !panel) return;
+
+        function open() {
+            panel.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            const firstFocusable = panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (firstFocusable) firstFocusable.focus();
+            document.addEventListener('click', onDocClick, true);
+            document.addEventListener('keydown', onKeydown, true);
+        }
+
+        function close() {
+            panel.hidden = true;
+            btn.setAttribute('aria-expanded', 'false');
+            btn.focus();
+            document.removeEventListener('click', onDocClick, true);
+            document.removeEventListener('keydown', onKeydown, true);
+        }
+
+        function toggle() {
+            if (panel.hidden) open(); else close();
+        }
+
+        function onDocClick(e) {
+            // Close if click is outside the button+panel
+            if (e.target === btn || btn.contains(e.target)) return;
+            if (!panel.contains(e.target)) close();
+        }
+
+        function onKeydown(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                close();
+            }
+        }
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggle();
+        });
+    })();
+
+    async function deleteAccount() {
+        const status = document.getElementById('del_status');
+        const password = document.getElementById('del_password').value;
+
+        if (!confirm("This will permanently delete your account and ratings. Continue?")) return;
+
+        status.textContent = "Deleting…";
+        status.style.color = "#555";
+
+        const res = await fetch(`/delete_account/?confirm=DELETE&password=${password}`, {
+            method: "DELETE",               
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+            },
         });
 
-        if (response.ok) {
-            window.location.href = "/home/"; // redirect after logout
+        let payload = null, text = null;
+        const ct = res.headers.get('content-type') || '';
+        try {
+            if (ct.includes('application/json')) payload = await res.json();
+            else text = await res.text();
+        } catch (_) { }
+
+        if (res.ok) {
+            status.textContent = "Account deleted. Redirecting…";
+            status.style.color = "green";
+            // redirect to home/login
+            setTimeout(() => { window.location.href = "/home/"; }, 800);
         } else {
-            alert("Logout failed");
+            status.textContent = (payload?.detail || text || `Error ${res.status}`);
+            status.style.color = "crimson";
+            btn.disabled = false;
         }
-    } catch (err) {
-        alert("Logout error: " + err.message);
     }
+
+    async function logoutUser() {
+        try {
+            const response = await fetch("/logout/", {
+                method: "POST",
+                credentials: "include"
+            });
+
+            if (response.ok) {
+                window.location.href = "/home/"; // redirect after logout
+            } else {
+                alert("Logout failed");
+            }
+        } catch (err) {
+            alert("Logout error: " + err.message);
+        }
 }
 </script>

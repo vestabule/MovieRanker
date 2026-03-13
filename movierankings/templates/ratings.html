@@ -257,7 +257,7 @@
             credentials: "include"
         });
 
-        if (res.ok || res.status === 204) {
+        if (res.ok) {
             applySearch();
         } else {
             alert("Failed to delete.");

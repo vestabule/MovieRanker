@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'movieranker',
-    'accounts',
+    'frontend',
     
     'django.contrib.admin',
     'django.contrib.auth',

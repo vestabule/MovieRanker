@@ -23,11 +23,11 @@ from frontend import views as fviews
 urlpatterns = [
     path('admin/', admin.site.urls, name="admin_panel"),
     
-    # Built-in auth views: /accounts/login/, /logout/, /password_change/, etc.
-    path("accounts/", include("django.contrib.auth.urls")),
+    # # Built-in auth views: /accounts/login/, /logout/, /password_change/, etc.
+    # path("accounts/", include("django.contrib.auth.urls")),
 
-    # Our custom signup + dashboard
-    path("accounts/", include("accounts.urls")),
+    # # Our custom signup + dashboard
+    # path("accounts/", include("accounts.urls")),
 
     # Home page
     #path("", views.home_redirect, name="home_redirect"),

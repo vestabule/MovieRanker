@@ -22,7 +22,6 @@
 
         <br><br>
 
-        <!-- Button triggers JavaScript function -->
         <button onclick="loginUser()">Log In</button>
 
     {% else %}
@@ -30,7 +29,6 @@
                 
         <br><br>
         
-        <!-- Button triggers JavaScript function -->
         <button onclick="logoutUser()">Log Out</button>
     {% endif %}
 
@@ -48,7 +46,7 @@
             try {
                 const response = await fetch("/login/", {
                     method: "POST",
-                    credentials: "include",        // <-- store session cookie
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json"
                     },
@@ -84,7 +82,7 @@
             try {
                 const response = await fetch("/logout/", {
                     method: "POST",
-                    credentials: "include",        // <-- store session cookie
+                    credentials: "include", 
                     headers: {
                         "Content-Type": "application/json"
                     },
