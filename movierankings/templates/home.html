@@ -1,15 +1,112 @@
-{% extends "base.html" %}
-{% block title %}Home{% endblock %}
+<!DOCTYPE html>
+<html>
 
-{% block content %}
-<h1>Welcome to MovieRank</h1>
-{% if user.is_authenticated %}
-<p>Hi {{ user.username }}! Explore movies, rank them, and get recommendations.</p>
-{% else %}
-<p>You’re not logged in. <a href="{% url 'login' %}">Log in</a> or <a href="{% url 'signup' %}">Sign up</a></p>
-{% endif %}
-<nav>
-    <!-- <a href="{% url 'home' %}">Home</a> |
-    <a href="{% url 'login' %}">Login</a> | -->
-</nav>
-{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Login Demo</title>
+</head>
+
+<body>
+
+    {% if not user.is_authenticated %}
+        <h2>Login</h2>
+
+        <!-- Username input -->
+        <input type="text" id="username" placeholder="Username" />
+
+        <br><br>
+
+        <!-- Password input -->
+        <input type="password" id="password" placeholder="Password" />
+
+        <br><br>
+
+        <!-- Button triggers JavaScript function -->
+        <button onclick="loginUser()">Log In</button>
+
+        <p><a href="{% url 'signup' %}">Sign Up</a></p>
+    {% else %}
+        <h2>Welcome {{ user.username }}!</h2>
+                
+        <br><br>
+        
+        <!-- Button triggers JavaScript function -->
+        <button onclick="logoutUser()">Log Out</button>
+    {% endif %}
+
+    <p id="status"></p>
+
+    <script>
+        async function loginUser() {
+
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const statusBox = document.getElementById("status");
+
+            statusBox.textContent = "Logging in...";
+
+            try {
+                const response = await fetch("/login/", {
+                    method: "POST",
+                    credentials: "include",        // <-- store session cookie
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "username": username,
+                        "password": password
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    statusBox.textContent = "Login failed: " + (data.detail || response.statusText);
+                    statusBox.style.color = "red";
+                    return;
+                }
+
+                statusBox.textContent = "Login successful!";
+                statusBox.style.color = "green";
+
+            } catch (error) {
+                statusBox.textContent = "Error: " + error;
+                statusBox.style.color = "red";
+            }
+        }
+
+        async function logoutUser() {
+
+            const statusBox = document.getElementById("status");
+
+            statusBox.textContent = "Logging out...";
+
+            try {
+                const response = await fetch("/logout/", {
+                    method: "POST",
+                    credentials: "include",        // <-- store session cookie
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    statusBox.textContent = "Logout failed: " + (data.detail || response.statusText);
+                    statusBox.style.color = "red";
+                    return;
+                }
+
+                statusBox.textContent = "Succeffully logged out!";
+                statusBox.style.color = "green";
+
+            } catch (error) {
+                statusBox.textContent = "Error: " + error;
+                statusBox.style.color = "red";
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

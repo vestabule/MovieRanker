@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Signup</title>
+</head>
+
+<body>
+
+    <h2>Sign Up</h2>
+
+    <input type="text" id="username" placeholder="Username" />
+
+    <br><br>
+
+    <input type="password" id="password" placeholder="Password" />
+
+    <br><br>
+
+    <button onclick="signUp()">Create Account</button>
+
+    <p id="status"></p>
+
+    <p><a href="{% url 'home' %}">Log In</a></p>
+
+    <script>
+        async function signUp() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const statusBox = document.getElementById("status");
+
+            statusBox.textContent = "Creating account...";
+
+            try {
+                const response = await fetch("/user_signup/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                let data;
+                const contentType = response.headers.get("content-type");
+
+                if (contentType && contentType.includes("application/json")) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                if (!response.ok) {
+                    statusBox.textContent = "Signup failed: " + (data.detail || data);
+                    statusBox.style.color = "red";
+                    return;
+                }
+
+                statusBox.textContent = "Account created!";
+                statusBox.style.color = "green";
+
+            } catch (err) {
+                statusBox.textContent = "Error: " + err.message;
+                statusBox.style.color = "red";
+            }
+        }
+    </script>
+
+</body>
+
+</html>

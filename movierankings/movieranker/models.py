@@ -174,7 +174,7 @@ class Rating(models.Model):
     # New: a real FK to the auth user
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,  # uses 'auth.User' unless you later swap
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="ratings",
         db_index=True,
         null=True,   # temporarily nullable for data migration; we’ll set null=False after backfill
@@ -194,6 +194,8 @@ class Rating(models.Model):
         ]
         constraints = [
             # We key uniqueness by (user, movieId, timestamp).
+            # For our users, will restrict to user and movieId, but the 
+            # background dataset has occurences of more than one review per user + movie
             models.UniqueConstraint(fields=["user", "movieId", "timestamp"],
                                     name="uniq_user_ml_movie_ts")
         ]
