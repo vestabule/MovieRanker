@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Your Ratings</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        input,
+        select {
+            padding: 6px;
+            margin: 4px;
+        }
+
+        button {
+            padding: 6px 12px;
+            margin: 4px;
+        }
+
+        .rating {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .pager {
+            margin-top: 15px;
+        }
+
+        .edit-box {
+            margin-top: 8px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% include "navbar.html" %}
+
+    <h1>Your Ratings</h1>
+
+    <!-- ========================= FILTERS ========================= -->
+    <h3>Filters</h3>
+
+    <input id="title" placeholder="Movie title" />
+    <input id="genre" placeholder="Genre" />
+    <input id="min_rating" type="number" step="0.1" placeholder="Min rating" />
+    <input id="max_rating" type="number" step="0.1" placeholder="Max rating" />
+
+    <select id="sort">
+        <option value="">Sort...</option>
+        <option value="rating">Rating</option>
+        <option value="timestamp">Timestamp</option>
+        <option value="title">Movie Title</option>
+    </select>
+
+    <select id="dir">
+        <option value="asc">ASC</option>
+        <option value="desc">DESC</option>
+    </select>
+
+    <input id="size" type="number" value="20" min="1" max="100" style="width:80px" />
+    <input id="page" type="number" value="1" min="1" style="width:80px" />
+
+    <button onclick="applySearch()">Search</button>
+
+    <hr>
+
+
+    <!-- ========================= CREATE RATING ========================= -->
+    <h3>Add a Rating</h3>
+
+    <input id="new_movieId" type="number" placeholder="MovieLens movieId" />
+    <input id="new_rating" type="number" step="0.1" placeholder="Rating" />
+
+    <button onclick="createRating()">Add Rating</button>
+
+    <p id="create_status"></p>
+
+    <hr>
+
+    <h2>Your Ratings</h2>
+    <div id="rating_results"></div>
+
+    <div class="pager">
+        <button id="prevBtn" disabled>Prev</button>
+        <span id="pageInfo"></span>
+        <button id="nextBtn" disabled>Next</button>
+    </div>
+
+
+    <script>
+    let lastQueryParams = null;
+
+    function collectParams() {
+        const p = new URLSearchParams();
+
+        const fields = ["title", "genre", "min_rating", "max_rating"];
+        fields.forEach(f => {
+            const v = document.getElementById(f).value.trim();
+            if (v) p.set(f, v);
+        });
+
+        const sort = document.getElementById("sort").value;
+        const dir = document.getElementById("dir").value;
+        const page = document.getElementById("page").value;
+        const size = document.getElementById("size").value;
+
+        if (sort) p.set("sort", sort);
+        if (dir) p.set("dir", dir);
+        p.set("page", page || "1");
+        p.set("size", size || "20");
+
+        return p;
+    }
+
+    async function applySearch() {
+        const params = collectParams();
+        params.set("page", "1");
+        document.getElementById("page").value = "1";
+        await fetchAndRender(params);
+    }
+
+    async function fetchAndRender(params) {
+        lastQueryParams = new URLSearchParams(params.toString());
+
+        const response = await fetch(`/backend_ratings/?${params.toString()}`, {
+            credentials: "include"
+        });
+        const data = await response.json();
+
+        const div = document.getElementById("rating_results");
+        div.innerHTML = "";
+
+        if (!data.results || data.results.length === 0) {
+            div.innerHTML = "<p>No ratings found.</p>";
+            return;
+        }
+
+        data.results.forEach(r => {
+            const el = document.createElement("div");
+            el.className = "rating";
+
+            el.innerHTML = `
+                <strong>${r.movie?.title || "(unknown movie)"}:</strong>
+                &nbsp;${r.rating} stars
+                <br>
+                <em>${r.timestamp}</em>
+                <br>
+                <button onclick="showEdit(${r.id}, ${r.rating})">Edit</button>
+                <button onclick="deleteRating(${r.id})">Delete</button>
+
+                <div id="edit_${r.id}" class="edit-box" style="display:none;">
+                    New rating:
+                    <input id="edit_rating_${r.id}" type="number" step="0.1" value="${r.rating}">
+                    <button onclick="submitEdit(${r.id})">Save</button>
+                    <button onclick="hideEdit(${r.id})">Cancel</button>
+                </div>
+
+                <hr>
+            `;
+
+            div.appendChild(el);
+        });
+
+        // Pagination
+        const pageInfo = document.getElementById("pageInfo");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+
+        const page = data.pagination.page;
+        const num_pages = data.pagination.num_pages;
+
+        pageInfo.textContent = `Page ${page} of ${num_pages}`;
+
+        prevBtn.disabled = page <= 1;
+        nextBtn.disabled = page >= num_pages;
+
+        prevBtn.onclick = () => {
+            const p = new URLSearchParams(lastQueryParams.toString());
+            p.set("page", String(page - 1));
+            document.getElementById("page").value = String(page - 1);
+            fetchAndRender(p);
+        };
+
+        nextBtn.onclick = () => {
+            const p = new URLSearchParams(lastQueryParams.toString());
+            p.set("page", String(page + 1));
+            document.getElementById("page").value = String(page + 1);
+            fetchAndRender(p);
+        };
+    }
+
+    async function createRating() {
+        const movieId = document.getElementById("new_movieId").value;
+        const rating = document.getElementById("new_rating").value;
+        const status = document.getElementById("create_status");
+
+        status.textContent = "Creating...";
+
+        const res = await fetch("/backend_ratings/", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ movieId: Number(movieId), rating: Number(rating) })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            status.textContent = `Error: ${data.detail || res.status}`;
+            status.style.color = "red";
+        } else {
+            status.textContent = "Rating added!";
+            status.style.color = "green";
+            applySearch();
+        }
+    }
+
+    /* =========== Editing =========== */
+    function showEdit(id, currentRating) {
+        document.getElementById(`edit_${id}`).style.display = "block";
+    }
+    function hideEdit(id) {
+        document.getElementById(`edit_${id}`).style.display = "none";
+    }
+    async function submitEdit(id) {
+        const newRating = document.getElementById(`edit_rating_${id}`).value;
+
+        const res = await fetch(`/backend_ratings/`, {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rating_id: id, rating: Number(newRating) })
+        });
+
+        if (res.ok) {
+            applySearch();
+        } else {
+            alert("Failed to update rating.");
+        }
+    }
+
+    /* =========== Deleting =========== */
+    async function deleteRating(id) {
+        if (!confirm("Delete this rating?")) return;
+
+        const res = await fetch(`/backend_ratings/?rating_id=${id}`, {
+            method: "DELETE",
+            credentials: "include"
+        });
+
+        if (res.ok || res.status === 204) {
+            applySearch();
+        } else {
+            alert("Failed to delete.");
+        }
+    }
+
+
+    // Auto-load ratings on first visit
+    applySearch();
+    </script>
+
+
+</body>
+
+</html>

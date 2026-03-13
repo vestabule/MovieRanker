@@ -7,6 +7,7 @@
 </head>
 
 <body>
+    {% include "navbar.html" %}
 
     {% if not user.is_authenticated %}
         <h2>Login</h2>
@@ -24,7 +25,6 @@
         <!-- Button triggers JavaScript function -->
         <button onclick="loginUser()">Log In</button>
 
-        <p><a href="{% url 'signup' %}">Sign Up</a></p>
     {% else %}
         <h2>Welcome {{ user.username }}!</h2>
                 
@@ -67,6 +67,7 @@
 
                 statusBox.textContent = "Login successful!";
                 statusBox.style.color = "green";
+                window.location.href = "/home/"; // redirect after logout
 
             } catch (error) {
                 statusBox.textContent = "Error: " + error;
@@ -98,6 +99,8 @@
 
                 statusBox.textContent = "Succeffully logged out!";
                 statusBox.style.color = "green";
+                window.location.href = "/home/"; // redirect after logout
+
 
             } catch (error) {
                 statusBox.textContent = "Error: " + error;

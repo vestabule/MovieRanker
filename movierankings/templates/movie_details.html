@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Movie Details</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    {% include "navbar.html" %}
+
+    <script>
+        async function loadMovie() {
+
+            const params = new URLSearchParams();
+            const movie_id = document.getElementById("id").value;
+            params.append("id", movie_id);
+            const response = await fetch(`/backend_movie/?${params.toString()}`);
+            const movie = await response.json();
+
+            document.getElementById("title").textContent = movie.title;
+
+            const d = document.getElementById("details");
+            d.innerHTML = `
+                    <div class="section">
+                        <strong>Overview:</strong>
+                        <p>${movie.overview || "No overview"}</p>
+                    </div>
+    
+                    <div class="section">
+                        <strong>Genres:</strong> ${movie.genres.join(", ")}
+                    </div>
+    
+                    <div class="section">
+                        <strong>Release Date:</strong> ${movie.release_date}
+                    </div>
+    
+                    <div class="section">
+                        <strong>Rating:</strong> ${movie.vote_average} (${movie.vote_count} votes)
+                    </div>
+    
+                    <div class="section">
+                        <strong>Popularity:</strong> ${Math.round(movie.popularity, 0)}
+                    </div>
+    
+                    <div class="section">
+                        <strong>Original Language:</strong> ${movie.original_language} (${movie.original_language_code})
+                    </div>
+    
+                    <div class="section">
+                        <h2>Cast</h2>
+                        <ul>
+                            ${movie.cast.map(c => `
+                                <li>${c.name} as ${c.character || "(unknown)"}</li>
+                            `).join("")}
+                        </ul>
+                    </div>
+    
+                    <div class="section">
+                        <h2>Directors</h2>
+                        <ul>
+                            ${movie.crew
+                    .filter(c => c.job === "Director")
+                    .map(c => `<li>${c.name}</li>`)
+                    .join("")}
+                        </ul>
+                    </div>
+    
+                    <div class="section">
+                        <h2>Keywords</h2>
+                        ${movie.keywords.join(", ")}
+                    </div>
+                `;
+        }
+
+    </script>
+
+    <h1 id="title">Loading...</h1>
+    {% if id is null %}
+        <input type="text" id="id" placeholder="Movie Id" />
+    {% else %}
+        <input type="text" id="id" value="{{ id }}" />
+        <script>loadMovie()</script>
+    {% endif %}
+    <br></br>
+    <button onclick="loadMovie()">Load Movie</button>
+    <br></br>
+
+    <div id="details"></div>
+<!-- 
+    <script>
+        async function loadMovie() {
+
+            const params = new URLSearchParams();
+            const movie_id = document.getElementById("id").value;
+            params.append("id", movie_id);
+            const response = await fetch(`/backend_movie/?${params.toString()}`);
+            const movie = await response.json();
+
+            document.getElementById("title").textContent = movie.title;
+
+            const d = document.getElementById("details");
+            d.innerHTML = `
+                <div class="section">
+                    <strong>Overview:</strong>
+                    <p>${movie.overview || "No overview"}</p>
+                </div>
+
+                <div class="section">
+                    <strong>Genres:</strong> ${movie.genres.join(", ")}
+                </div>
+
+                <div class="section">
+                    <strong>Release Date:</strong> ${movie.release_date}
+                </div>
+
+                <div class="section">
+                    <strong>Rating:</strong> ${movie.vote_average} (${movie.vote_count} votes)
+                </div>
+
+                <div class="section">
+                    <strong>Popularity:</strong> ${Math.round(movie.popularity, 0)}
+                </div>
+
+                <div class="section">
+                    <strong>Original Language:</strong> ${movie.original_language} (${movie.original_language_code})
+                </div>
+
+                <div class="section">
+                    <h2>Cast</h2>
+                    <ul>
+                        ${movie.cast.map(c => `
+                            <li>${c.name} as ${c.character || "(unknown)"}</li>
+                        `).join("")}
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h2>Directors</h2>
+                    <ul>
+                        ${movie.crew
+                            .filter(c => c.job === "Director")
+                            .map(c => `<li>${c.name}</li>`)
+                            .join("")}
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h2>Keywords</h2>
+                    ${movie.keywords.join(", ")}
+                </div>
+            `;
+        }
+
+    </script> -->
+
+</body>
+
+</html>

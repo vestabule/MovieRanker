@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Movie Search</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        input,
+        select {
+            padding: 6px;
+            margin: 4px;
+        }
+
+        button {
+            padding: 6px 12px;
+        }
+
+        .movie {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    {% include "navbar.html" %}
+    <h1>Search Movies</h1>
+
+    <!-- FILTERS -->
+    <div>
+        <input type="text" id="title" placeholder="Title" />
+        <input type="text" id="genre" placeholder="Genre" />
+        <input type="text" id="actor" placeholder="Actor" />
+        <input type="text" id="director" placeholder="Director" />
+        <input type="number" id="min_rating" placeholder="Min Rating" step="0.1" />
+        <input type="number" id="max_rating" placeholder="Max Rating" step="0.1" />
+        <input type="text" id="language" placeholder="Language (name or code)" />
+        <input type="text" id="company" placeholder="Production Company" />
+        <input type="text" id="country" placeholder="Country (name or code)" />
+        <input type="text" id="keyword" placeholder="Keyword" />
+
+        <select id="sort">
+            <option value="">Sort by...</option>
+            <option value="title">Title</option>
+            <option value="rating">Rating</option>
+            <option value="popularity">Popularity</option>
+            <option value="release_date">Release Date</option>
+        </select>
+
+        <select id="dir">
+            <option value="asc">ASC</option>
+            <option value="desc">DESC</option>
+        </select>
+
+        <!-- Page + size controls -->
+        <input type="number" id="size" placeholder="Size" min="1" max="100" value="20" style="width:80px;" />
+        <input type="number" id="page" placeholder="Page" min="1" value="1" style="width:80px;" />
+
+        <button onclick="applySearch()">Search</button>
+    </div>
+
+    <h2>Results</h2>
+    <div id="results"></div>
+
+    <div class="pager">
+        <button id="prevBtn" disabled>Prev</button>
+        <span id="pageInfo">Page 1</span>
+        <button id="nextBtn" disabled>Next</button>
+    </div>
+
+    <script>
+        let lastQueryParams = null; // remember filters to reuse when paging
+
+        function collectParams() {
+            const params = new URLSearchParams();
+
+            // Filters
+            const fields = [
+                "title", "genre", "actor", "director",
+                "min_rating", "max_rating",
+                "language", "company", "country", "keyword"
+            ];
+            fields.forEach(f => {
+                const el = document.getElementById(f);
+                if (!el) return;
+                const val = el.value.trim();
+                if (val) params.set(f, val);
+            });
+
+            // Sorting
+            const sort = document.getElementById("sort").value;
+            const dir = document.getElementById("dir").value;
+            if (sort) params.set("sort", sort);
+            if (dir) params.set("dir", dir);
+
+            // Pagination
+            const size = parseInt(document.getElementById("size").value || "20", 10);
+            const page = parseInt(document.getElementById("page").value || "1", 10);
+            if (size) params.set("size", String(size));
+            if (page) params.set("page", String(page));
+
+            return params;
+        }
+
+        async function fetchAndRender(params) {
+            lastQueryParams = new URLSearchParams(params.toString()); // clone
+            const response = await fetch(`/backend_movies/?${params.toString()}`);
+            const data = await response.json();
+
+            // Render list
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "";
+            data.results.forEach(m => {
+                const div = document.createElement("div");
+                div.className = "movie";
+                div.innerHTML = `
+      <a href="/movie/?id=${m.id}">${m.title}</a><br/>
+      Rating: ${m.vote_average ?? "N/A"} |
+      Popularity: ${Math.round(m.popularity) ?? "N/A"} |
+      Release: ${m.release_date ?? "N/A"}
+    `;
+                resultsDiv.appendChild(div);
+            });
+
+            // Render pager
+            const pageInfo = document.getElementById("pageInfo");
+            const prevBtn = document.getElementById("prevBtn");
+            const nextBtn = document.getElementById("nextBtn");
+
+            const page = data.pagination?.page ?? 1;
+            const numPages = data.pagination?.num_pages ?? 1;
+
+            pageInfo.textContent = `Page ${page} of ${numPages}`;
+            prevBtn.disabled = page <= 1;
+            nextBtn.disabled = page >= numPages;
+
+            prevBtn.onclick = () => {
+                if (page <= 1) return;
+                const p = new URLSearchParams(lastQueryParams.toString());
+                p.set("page", String(page - 1));
+                // sync visible input
+                document.getElementById("page").value = String(page - 1);
+                fetchAndRender(p);
+            };
+            nextBtn.onclick = () => {
+                if (page >= numPages) return;
+                const p = new URLSearchParams(lastQueryParams.toString());
+                p.set("page", String(page + 1));
+                document.getElementById("page").value = String(page + 1);
+                fetchAndRender(p);
+            };
+        }
+
+        function applySearch() {
+            const params = collectParams();
+            // Reset to page 1 whenever filters change
+            params.set("page", "1");
+            document.getElementById("page").value = "1";
+            fetchAndRender(params);
+        }
+
+        // Initial auto-search (optional)
+        // applySearch();
+    </script>
+</body>
+
+</html>
