@@ -26,7 +26,7 @@ def resolve_movie(id: int | None = None, name: str | None = None, year: int | No
     """
     if id is not None:
         try: id = int(id)
-        except: return None, JsonResponse({"detail": f"Movie id must be a number {id} not found"}, status=404)
+        except: return None, JsonResponse({"detail": f"Movie id must be an integer"}, status=400)
 
         try:
             m = Movie.objects.get(pk=id)
@@ -61,7 +61,7 @@ def resolve_movie(id: int | None = None, name: str | None = None, year: int | No
 def user_login(request):
 
     if request.method != "POST":
-        return JsonResponse({"detail": "POST only"}, status=405)
+        return JsonResponse({"detail": "Method not allowed"}, status=405)
 
     try:
         data = json.loads(request.body)
@@ -76,19 +76,19 @@ def user_login(request):
     if user is None:
         return JsonResponse({"detail": "Invalid Credentials"}, status=400)
 
-    # Djano creates a session cookie for the user, and populates request.user 
+    # Django creates a session cookie for the user, and populates request.user 
     login(request, user)
-    return JsonResponse({"detail": "Login Successful"}, status=200)
+    return JsonResponse({"message": "Login Successful"}, status=200)
 
 @csrf_exempt 
 def user_logout(request):
 
     if request.method != "POST":
-        return JsonResponse({"detail": "POST only"}, status=405)
+        return JsonResponse({"detail": "Method not allowed"}, status=405)
 
     if request.method == "POST":
         logout(request)
-        return JsonResponse({"detail": "Logged out"})
+        return JsonResponse({"message": "Logged out"})
     
     return JsonResponse({"detail": "Logout failed"}, status=405)
 
@@ -102,16 +102,20 @@ def delete_account(request):
     if request.method not in ("DELETE", "POST"):
         return JsonResponse({"detail": "Method not allowed"}, status=405)
 
+    # Look for parameters in json body and http parameters
+    try:
+        body = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        body = {}
 
-    # Safety guard: explicit confirmation string
-    confirm = request.GET.get("confirm")
-    if confirm != "DELETE":
-        return JsonResponse({"detail": "Confirmation required: pass parameter confirm='DELETE'."}, status=400)
+    confirm = request.GET.get("confirm") or body.get("confirm")
+    password = request.GET.get("password") or body.get("password")
+    
+    if not confirm or confirm != "DELETE":
+        return JsonResponse({"detail": "Confirmation required: confirm='DELETE'."}, status=400)
 
-    # Check user's password
-    password = request.GET.get("password")
     if not user.check_password(password):
-        return JsonResponse({"detail": "Invalid password"}, status=403)
+        return JsonResponse({"detail": "Password is either missing or invalid"}, status=403)
 
 
     # End the user's session
@@ -121,13 +125,13 @@ def delete_account(request):
     with transaction.atomic():
         user.delete()
 
-    return JsonResponse({"detail": "Account deleted"}, status=200)
+    return JsonResponse({"message": "Deleted"}, status=200)
 
 @csrf_exempt
 def user_signup(request):
 
     if request.method != "POST":
-        return JsonResponse({"detail": "POST only"}, status=405)
+        return JsonResponse({"detail": "Method not allowed"}, status=405)
     
     try:
         data = json.loads(request.body)
@@ -145,13 +149,13 @@ def user_signup(request):
     
     User.objects.create_user(username=username, password=password)
 
-    return JsonResponse({"detail": "User created successful"}, status=201)
+    return JsonResponse({"message": "User created successful"}, status=201)
 
 @csrf_exempt
 def movies(request):
 
     if request.method != "GET":
-        return JsonResponse({"detail": "GET only"}, status=405)
+        return JsonResponse({"detail": "Method not allowed"}, status=405)
 
     qs = Movie.objects.all().distinct()
 
@@ -191,8 +195,7 @@ def movies(request):
     if language:
         # Match either the related Language name or the stored code field
         qs = qs.filter(
-            Q(original_language__name__icontains=language) |
-            Q(original_language_code__iexact=language)
+            Q(original_language__name__icontains=language) | Q(original_language_code__iexact=language)
         )
 
     # ------------------------------------------------------------------------
@@ -210,8 +213,7 @@ def movies(request):
     country = request.GET.get("country")
     if country:
         qs = qs.filter(
-            Q(production_countries__name__icontains=country) |
-            Q(production_countries__iso_3166_1__iexact=country)
+            Q(production_countries__name__icontains=country) | Q(production_countries__iso_3166_1__iexact=country)
         )
 
 
@@ -351,7 +353,7 @@ def movies(request):
 def movie_details(request):
 
     if request.method != "GET":
-        return JsonResponse({"details": "GET only"}, status=405)
+        return JsonResponse({"detail": "Method not allowed"}, status=405)
 
     id = request.GET.get("id")
     name = request.GET.get("name")
@@ -586,8 +588,8 @@ def movie_ratings(request):
         movieId = data.get("movieId")        
         rating_value = data.get("rating") 
 
-        if movieId or rating_value is None:
-            return JsonResponse({"detail": "movie id and rating is required"}, status=400)
+        if movieId is None or rating_value is None:
+            return JsonResponse({"detail": "movieId and rating are required"}, status=400)
 
         # Validate rating
         try:
@@ -597,7 +599,7 @@ def movie_ratings(request):
 
         rating_float = round(rating_float, 1)
         if rating_float < 0 or rating_float > 5:
-            return JsonResponse({"details": "rating must be from 0-5"})
+            return JsonResponse({"detail": "rating must be from 0-5"})
 
         # Get current timestamp
         timestamp = timezone.now()
@@ -627,7 +629,7 @@ def movie_ratings(request):
                 {"detail": "You have already rated this movie."},
                 status=409
             )
-        print("Timestamp  " + str(timestamp))
+        
         # ----------------------------------------------
         # Create the rating record
         # ----------------------------------------------
@@ -693,7 +695,7 @@ def movie_ratings(request):
 
         rating_float = round(rating_float, 1)
         if rating_float < 0 or rating_float > 5:
-            return JsonResponse({"details": "rating must be from 0-5"})
+            return JsonResponse({"detail": "rating must be from 0-5"})
         
         r.rating = rating_float
         r.timestamp = timezone.now()
@@ -707,7 +709,6 @@ def movie_ratings(request):
             )
 
         return JsonResponse({
-            "details": "Rating updated",
             "rating": {
                 "id": r.id,
                 "movieId": r.movieId,
@@ -726,13 +727,18 @@ def movie_ratings(request):
 
     # =========================== DELETE ===========================
     if request.method == "DELETE":
+
+        # Look for rating id in body or parameters
+        try:
+            body = json.loads(request.body or "{}")
+        except json.JSONDecodeError:
+            body = {}
+
+        rating_id = request.GET.get("rating_id") or body.get("rating_id")
         
-        # Requires an id
-        rating_id = request.GET.get("rating_id")       
-
-        if rating_id is None:
+        if not rating_id:
             return JsonResponse({"detail": "rating_id is required"}, status=400)
-
+     
         # --- Load the rating and enforce ownership ---
         try:
             r = Rating.objects.select_related("movie").get(id=rating_id)
@@ -743,7 +749,7 @@ def movie_ratings(request):
             return JsonResponse({"detail": "Forbidden"}, status=403)
         
         r.delete()
-        return JsonResponse({"detail": "Deleted"}, status=200)
+        return JsonResponse({"message": "Deleted"}, status=200)
 
     
     # ======================= Other methods ========================

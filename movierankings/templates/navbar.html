@@ -95,7 +95,7 @@
         status.textContent = "Deleting…";
         status.style.color = "#555";
 
-        const res = await fetch(`/delete_account/?confirm=DELETE&password=${password}`, {
+        const res = await fetch(`/api/delete_account/?confirm=DELETE&password=${password}`, {
             method: "DELETE",               
             credentials: "include",
             headers: {
@@ -124,7 +124,7 @@
 
     async function logoutUser() {
         try {
-            const response = await fetch("/logout/", {
+            const response = await fetch("/api/logout/", {
                 method: "POST",
                 credentials: "include"
             });

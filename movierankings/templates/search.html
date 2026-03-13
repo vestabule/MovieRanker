@@ -116,7 +116,7 @@
 
         async function fetchAndRender(params) {
             lastQueryParams = new URLSearchParams(params.toString()); // clone
-            const response = await fetch(`/backend_movies/?${params.toString()}`);
+            const response = await fetch(`/api/movies/?${params.toString()}`);
             const data = await response.json();
 
             // Render list

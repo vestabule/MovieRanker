@@ -44,7 +44,7 @@
             statusBox.textContent = "Logging in...";
 
             try {
-                const response = await fetch("/login/", {
+                const response = await fetch("/api/login/", {
                     method: "POST",
                     credentials: "include",
                     headers: {
@@ -80,7 +80,7 @@
             statusBox.textContent = "Logging out...";
 
             try {
-                const response = await fetch("/logout/", {
+                const response = await fetch("/api/logout/", {
                     method: "POST",
                     credentials: "include", 
                     headers: {

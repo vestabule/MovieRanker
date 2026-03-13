@@ -34,7 +34,7 @@
             statusBox.textContent = "Creating account...";
 
             try {
-                const response = await fetch("/user_signup/", {
+                const response = await fetch("/api/user_signup/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

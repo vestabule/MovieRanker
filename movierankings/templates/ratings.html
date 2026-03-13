@@ -131,7 +131,7 @@
     async function fetchAndRender(params) {
         lastQueryParams = new URLSearchParams(params.toString());
 
-        const response = await fetch(`/backend_ratings/?${params.toString()}`, {
+        const response = await fetch(`/api/ratings/?${params.toString()}`, {
             credentials: "include"
         });
         const data = await response.json();
@@ -205,7 +205,7 @@
 
         status.textContent = "Creating...";
 
-        const res = await fetch("/backend_ratings/", {
+        const res = await fetch("/api/ratings/", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -234,7 +234,7 @@
     async function submitEdit(id) {
         const newRating = document.getElementById(`edit_rating_${id}`).value;
 
-        const res = await fetch(`/backend_ratings/`, {
+        const res = await fetch(`/api/ratings/`, {
             method: "PUT",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -252,7 +252,7 @@
     async function deleteRating(id) {
         if (!confirm("Delete this rating?")) return;
 
-        const res = await fetch(`/backend_ratings/?rating_id=${id}`, {
+        const res = await fetch(`/api/ratings/?rating_id=${id}`, {
             method: "DELETE",
             credentials: "include"
         });

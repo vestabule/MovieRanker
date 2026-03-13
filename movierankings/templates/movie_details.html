@@ -54,7 +54,7 @@
             if (year != "") {
                 params.append("year", year);
             }
-            const response = await fetch(`/backend_movie/?${params.toString()}`);
+            const response = await fetch(`/api/movie/?${params.toString()}`);
             const movie = await response.json();
 
             document.getElementById("main_title").textContent = movie.title;
